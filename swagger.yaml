@@ -1,0 +1,223 @@
+openapi: 3.0.0
+info:
+  title: XJ3395 Trade License API
+  version: 1.0.0
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /api/v1/auth/token:
+    post:
+      summary: Generate auth token [DEV]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                role:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/applications:
+    post:
+      summary: Create new application [CUSTOMER]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                licenseType:
+                  type: string
+                  example: "TRADE_LICENSE"
+      responses:
+        '201':
+          description: Created
+  /api/v1/applications/{id}:
+    get:
+      summary: Get application detail [ALL ROLES]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/applications/my/{applicantId}:
+    get:
+      summary: Get my applications [CUSTOMER]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: applicantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/applications/{id}/payment:
+    post:
+      summary: Settle payment [CUSTOMER]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  example: 100
+                currency:
+                  type: string
+                  example: "USD"
+                transactionId:
+                  type: string
+                  example: "TX123"
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/applications/{id}/attachments:
+    post:
+      summary: Upload attachment [CUSTOMER]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                documentType:
+                  type: string
+                  example: "GENERAL"
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/applications/{id}/submit:
+    post:
+      summary: Submit application [CUSTOMER]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/applications/{id}/cancel:
+    delete:
+      summary: Cancel application [CUSTOMER]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/review/pending:
+    get:
+      summary: Reviewer queue [REVIEWER]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /api/v1/review/{id}/action:
+    put:
+      summary: Accept/Reject/Adjust [REVIEWER]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  example: "ACCEPT"
+                comment:
+                  type: string
+                  example: "All documents look good to me."
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/approval/pending:
+    get:
+      summary: Approver queue [APPROVER]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /api/v1/approval/{id}/action:
+    put:
+      summary: Approve/Reject/ReReview [APPROVER]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  example: "APPROVE"
+                comment:
+                  type: string
+                  example: "Final approval granted."
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
