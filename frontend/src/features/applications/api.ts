@@ -119,3 +119,23 @@ export const useSubmitApplication = (applicationId: string | null) => {
   });
 
 };
+
+export const useDownloadLicense = () => {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async (applicationId: string) => {
+      const response = await api.get(`/applications/${applicationId}/download`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      window.open(url, '_blank');
+      
+      // Cleanup the object URL
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+      
+      return response.data;
+    }
+  });
+};

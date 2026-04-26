@@ -1,17 +1,18 @@
 import { useUser } from "@clerk/clerk-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FilePlus, FileText, CheckCircle, Clock } from "lucide-react";
+import { FilePlus, FileText, CheckCircle, Clock, Download, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useDashboardAnalytics } from "../api";
-import { useCustomerApplications } from "../../applications/api";
+import { useCustomerApplications, useDownloadLicense } from "../../applications/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function CustomerDashboard() {
   const { user } = useUser();
   const { data: stats, isLoading: isStatsLoading } = useDashboardAnalytics();
   const { data: recentApps, isLoading: isAppsLoading } = useCustomerApplications();
+  const { mutate: downloadLicense, isPending: isDownloading, variables: downloadVars } = useDownloadLicense();
 
   return (
     <div className="space-y-8">
@@ -82,7 +83,8 @@ export function CustomerDashboard() {
                   <th className="px-4 py-3 font-medium rounded-tl-md">Application ID</th>
                   <th className="px-4 py-3 font-medium">Type</th>
                   <th className="px-4 py-3 font-medium">Date Submitted</th>
-                  <th className="px-4 py-3 font-medium text-right rounded-tr-md">Status</th>
+                  <th className="px-4 py-3 font-medium text-right">Status</th>
+                  <th className="px-4 py-3 font-medium text-right rounded-tr-md">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,11 +95,12 @@ export function CustomerDashboard() {
                       <td className="px-4 py-4"><Skeleton className="h-4 w-32" /></td>
                       <td className="px-4 py-4"><Skeleton className="h-4 w-20" /></td>
                       <td className="px-4 py-4 flex justify-end"><Skeleton className="h-6 w-20 rounded-full" /></td>
+                      <td className="px-4 py-4 text-right"><Skeleton className="h-8 w-8 ml-auto" /></td>
                     </tr>
                   ))
                 ) : recentApps?.length === 0 ? (
                    <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground italic">
+                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground italic">
                       No applications found. Start your first application above!
                     </td>
                   </tr>
@@ -113,6 +116,24 @@ export function CustomerDashboard() {
                         <Badge variant={app.status === 'APPROVED' ? 'default' : app.status === 'REJECTED' ? 'destructive' : 'secondary'}>
                           {app.status}
                         </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {app.status === 'APPROVED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white hover:bg-slate-50 text-blue-600 border-blue-200"
+                            onClick={() => downloadLicense(app.id)}
+                            disabled={isDownloading && downloadVars === app.id}
+                          >
+                            {isDownloading && downloadVars === app.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4 mr-2" />
+                            )}
+                            PDF
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))
