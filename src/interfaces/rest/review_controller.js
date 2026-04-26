@@ -11,6 +11,7 @@ class ReviewController {
   }
 
   async getPending(req, res) {
+    console.log('User Role:', req.user.role);
     const result = await this.getApplicationsForReviewerQuery.execute();
     res.json({ ...result, timestamp: new Date() });
   }
@@ -18,7 +19,7 @@ class ReviewController {
   async reviewAction(req, res) {
     const schema = Joi.object({
       action: Joi.string().valid('ACCEPT', 'REJECT', 'ADJUST').required(),
-      comment: Joi.string().optional()
+      comment: Joi.string().allow('').optional()
     });
     const { error, value } = schema.validate(req.body);
     if (error) throw new Error(error.details[0].message);

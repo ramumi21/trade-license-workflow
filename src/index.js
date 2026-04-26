@@ -5,6 +5,7 @@
 require('dotenv').config();
 require('express-async-errors'); // Must be required before routes
 const express = require('express');
+const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const fs = require('fs');
@@ -12,6 +13,7 @@ const path = require('path');
 
 const { authMiddleware } = require('./interfaces/middleware/auth_middleware');
 const { errorMiddleware } = require('./interfaces/middleware/error_middleware');
+const { clerkMiddleware } = require('@clerk/express');
 
 const { TradeLicenseRepositoryImpl } = require('./infrastructure/persistence/trade_license_repository_impl');
 const { LocalFileStorageService } = require('./infrastructure/storage/local_file_storage_service');
@@ -34,12 +36,12 @@ const { ApplicationController } = require('./interfaces/rest/application_control
 const { ReviewController } = require('./interfaces/rest/review_controller');
 const { ApprovalController } = require('./interfaces/rest/approval_controller');
 
-const authRoutes = require('./interfaces/routes/auth_routes');
 const applicationRoutes = require('./interfaces/routes/application_routes');
 const reviewRoutes = require('./interfaces/routes/review_routes');
 const approvalRoutes = require('./interfaces/routes/approval_routes');
 
 const app = express();
+app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 
 const uploadsDir = process.env.STORAGE_BASE_PATH || 'uploads/';
@@ -54,6 +56,9 @@ try {
   console.log('Swagger file not found or invalid, skipping Swagger UI setup.');
 }
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+app.use(clerkMiddleware());
 app.use(authMiddleware);
 
 const repository = new TradeLicenseRepositoryImpl();
@@ -83,7 +88,6 @@ const applicationController = new ApplicationController(
 const reviewController = new ReviewController(getApplicationsForReviewerQuery, reviewApplicationHandler);
 const approvalController = new ApprovalController(getApplicationsForApproverQuery, approveApplicationHandler);
 
-app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/applications', applicationRoutes(applicationController));
 app.use('/api/v1/review', reviewRoutes(reviewController));
 app.use('/api/v1/approval', approvalRoutes(approvalController));
@@ -91,7 +95,7 @@ app.use('/api/v1/approval', approvalRoutes(approvalController));
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
 });

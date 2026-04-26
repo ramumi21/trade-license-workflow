@@ -7,7 +7,7 @@ CREATE TABLE trade_license_applications (
   application_number VARCHAR(30) UNIQUE NOT NULL,
   license_type VARCHAR(50) NOT NULL,
   status VARCHAR(50) NOT NULL,
-  applicant_id UUID NOT NULL,
+  applicant_id VARCHAR(50) NOT NULL,
   commodity_id UUID,
   payment_amount NUMERIC(15,2),
   payment_currency VARCHAR(10),
@@ -32,7 +32,7 @@ CREATE TABLE workflow_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id UUID NOT NULL
     REFERENCES trade_license_applications(id) ON DELETE CASCADE,
-  author_id UUID NOT NULL,
+  author_id VARCHAR(50) NOT NULL,
   role VARCHAR(50) NOT NULL,
   message TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT now()

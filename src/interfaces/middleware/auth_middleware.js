@@ -1,27 +1,48 @@
 /**
  * XJ3395 — Interfaces Layer
- * What this file handles: JWT verification middleware.
+ * What this file handles: Clerk authentication middleware and RBAC role mapping.
  */
-const jwt = require('jsonwebtoken');
+const { getAuth, clerkClient } = require('@clerk/express');
 
-function authMiddleware(req, res, next) {
-  // Allow auth token generation and swagger UI without auth
-  if (req.path.startsWith('/api/v1/auth') || req.path.startsWith('/api-docs')) {
+async function authMiddleware(req, res, next) {
+  // Allow swagger UI without auth
+  if (req.path.startsWith('/api-docs') || req.path === '/health') {
     return next();
   }
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, error: 'Unauthorized', message: 'No token provided', statusCode: 401, timestamp: new Date() });
-  }
-
-  const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'xj3395-secret-key-min-32-characters');
-    req.user = decoded;
+    const auth = getAuth(req);
+    
+    if (!auth || !auth.userId) {
+      return res.status(401).json({ error: 'Unauthenticated' });
+    }
+
+    // Try to get role from claims first (if JWT template is configured)
+    const claims = auth.sessionClaims || {};
+    const metadata = claims.metadata || claims.publicMetadata || {};
+    let role = metadata.role;
+
+    // If not in claims, fetch the user directly from Clerk API to ensure we have the latest publicMetadata
+    if (!role) {
+      const user = await clerkClient.users.getUser(auth.userId);
+      if (user && user.publicMetadata) {
+        role = user.publicMetadata.role;
+      }
+    }
+
+    // Map it to req.user for backward compatibility with our handlers
+    req.user = {
+      userId: auth.userId,
+      role: role || 'CUSTOMER'
+    };
+    
+    // Add debugging log to help trace role assignment
+    console.log(`[Auth] User ${auth.userId} hydrated with role: ${req.user.role}`);
+    
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, error: 'Unauthorized', message: 'Invalid token', statusCode: 401, timestamp: new Date() });
+    console.error('[Auth Error]', err);
+    next(err);
   }
 }
 
