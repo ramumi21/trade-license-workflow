@@ -59,10 +59,11 @@ class ApplicationController {
   }
 
   async getMyApplications(req, res) {
-    if (req.user.userId !== req.params.applicantId) {
+    const targetId = req.params.applicantId || req.user.userId;
+    if (req.params.applicantId && req.user.userId !== req.params.applicantId) {
       return res.status(403).json(Result.failure('Forbidden', 403));
     }
-    const apps = await this.repository.findByApplicantId(req.params.applicantId);
+    const apps = await this.repository.findByApplicantId(targetId);
     res.json({ success: true, data: apps, timestamp: new Date() });
   }
 

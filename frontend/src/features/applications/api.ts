@@ -7,21 +7,26 @@ import type { Step1FormValues, Step3FormValues, Application } from "./schemas";
 
 
 export const useCreateApplication = () => {
-
   const api = useApi();
-
   return useMutation({
-
     mutationFn: async (data: Step1FormValues) => {
-
       const response = await api.post("/applications", data);
-
       return response.data?.data || response.data;
-
     },
-
   });
+};
 
+import { useQuery } from "@tanstack/react-query";
+
+export const useCustomerApplications = () => {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["applications"],
+    queryFn: async () => {
+      const response = await api.get("/applications");
+      return (response.data?.data || response.data || []) as Application[];
+    },
+  });
 };
 
 

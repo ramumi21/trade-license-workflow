@@ -88,9 +88,17 @@ const applicationController = new ApplicationController(
 const reviewController = new ReviewController(getApplicationsForReviewerQuery, reviewApplicationHandler);
 const approvalController = new ApprovalController(getApplicationsForApproverQuery, approveApplicationHandler);
 
+const { AnalyticsRepository } = require('./infrastructure/persistence/analytics_repository');
+const { AnalyticsController } = require('./interfaces/rest/analytics_controller');
+const analyticsRoutes = require('./interfaces/routes/analytics_routes');
+
+const analyticsRepository = new AnalyticsRepository();
+const analyticsController = new AnalyticsController(analyticsRepository);
+
 app.use('/api/v1/applications', applicationRoutes(applicationController));
 app.use('/api/v1/review', reviewRoutes(reviewController));
 app.use('/api/v1/approval', approvalRoutes(approvalController));
+app.use('/api/v1/analytics', analyticsRoutes(analyticsController));
 
 app.use(errorMiddleware);
 
