@@ -42,6 +42,7 @@ export const useApprovalAction = (applicationId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingApprovals"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingReviews"] });
     },
   });
 };

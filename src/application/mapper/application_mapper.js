@@ -9,6 +9,12 @@ function toApplicationSummaryDto(app) {
     licenseType: app.licenseType,
     status: app.status,
     applicantId: app.applicantId,
+    paymentStatus: app.payment?.isSettled ? 'PAID' : 'UNPAID',
+    attachments: app.attachments ? app.attachments.map(a => ({
+      id: a.id,
+      fileName: a.fileName,
+      documentType: a.documentType
+    })) : [],
     createdAt: app.createdAt
   };
 }

@@ -107,9 +107,8 @@ export const useSubmitApplication = (applicationId: string | null) => {
     },
 
     onSuccess: () => {
-
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-
+      queryClient.invalidateQueries({ queryKey: ["pendingReviews"] });
     }
 
   });

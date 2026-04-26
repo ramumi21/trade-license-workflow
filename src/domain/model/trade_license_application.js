@@ -81,7 +81,7 @@ class TradeLicenseApplication {
     } else if (action === ApprovalAction.REJECT) {
       this.status = WorkflowStatus.REJECTED;
     } else if (action === ApprovalAction.REREVIEW) {
-      this.status = WorkflowStatus.PENDING;
+      this.status = WorkflowStatus.RE_REVIEW;
     } else {
       throw new Error(`Invalid approval action ${action}`);
     }
