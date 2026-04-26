@@ -108,7 +108,7 @@ app.use('/api/v1/analytics', analyticsRoutes(analyticsController));
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, 'localhost', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
 });
