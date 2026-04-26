@@ -19,6 +19,7 @@ module.exports = (applicationController) => {
   router.post('/:id/payment', requireRole('CUSTOMER'), (req, res) => applicationController.settlePayment(req, res));
   router.post('/:id/attachments', requireRole('CUSTOMER'), upload.single('file'), (req, res) => applicationController.uploadAttachment(req, res));
   router.delete('/:id/cancel', requireRole('CUSTOMER'), (req, res) => applicationController.cancelApplication(req, res));
+  router.get('/:id/download', requireRole('CUSTOMER'), (req, res) => applicationController.downloadLicense(req, res));
   
   return router;
 };

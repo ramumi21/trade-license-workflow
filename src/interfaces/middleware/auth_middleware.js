@@ -5,8 +5,8 @@
 const { getAuth, clerkClient } = require('@clerk/express');
 
 async function authMiddleware(req, res, next) {
-  // Allow swagger UI without auth
-  if (req.path.startsWith('/api-docs') || req.path === '/health') {
+  // Allow swagger UI, health check, and public verify routes without auth
+  if (req.path.startsWith('/api-docs') || req.path === '/health' || req.path.startsWith('/api/v1/public')) {
     return next();
   }
 

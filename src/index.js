@@ -18,6 +18,7 @@ const { clerkMiddleware } = require('@clerk/express');
 const { TradeLicenseRepositoryImpl } = require('./infrastructure/persistence/trade_license_repository_impl');
 const { LocalFileStorageService } = require('./infrastructure/storage/local_file_storage_service');
 const { DomainEventPublisher } = require('./infrastructure/events/domain_event_publisher');
+const { PdfGenerationService } = require('./infrastructure/services/pdf_generation_service');
 
 const { ApplicationNumberGenerator } = require('./application/services/application_number_generator');
 
@@ -39,6 +40,7 @@ const { ApprovalController } = require('./interfaces/rest/approval_controller');
 const applicationRoutes = require('./interfaces/routes/application_routes');
 const reviewRoutes = require('./interfaces/routes/review_routes');
 const approvalRoutes = require('./interfaces/routes/approval_routes');
+const publicRoutes = require('./interfaces/routes/public_routes');
 
 const app = express();
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
@@ -65,6 +67,7 @@ const repository = new TradeLicenseRepositoryImpl();
 const fileStorageService = new LocalFileStorageService();
 const domainEventPublisher = new DomainEventPublisher();
 const applicationNumberGenerator = new ApplicationNumberGenerator();
+const pdfGenerationService = new PdfGenerationService();
 
 const submitApplicationHandler = new SubmitApplicationHandler(repository, applicationNumberGenerator, domainEventPublisher);
 const reviewApplicationHandler = new ReviewApplicationHandler(repository, domainEventPublisher);
@@ -83,7 +86,8 @@ const applicationController = new ApplicationController(
   repository,
   settlePaymentHandler,
   uploadAttachmentHandler,
-  cancelApplicationHandler
+  cancelApplicationHandler,
+  pdfGenerationService
 );
 const reviewController = new ReviewController(getApplicationsForReviewerQuery, reviewApplicationHandler);
 const approvalController = new ApprovalController(getApplicationsForApproverQuery, approveApplicationHandler);
@@ -95,6 +99,7 @@ const analyticsRoutes = require('./interfaces/routes/analytics_routes');
 const analyticsRepository = new AnalyticsRepository();
 const analyticsController = new AnalyticsController(analyticsRepository);
 
+app.use('/api/v1/public', publicRoutes(applicationController));
 app.use('/api/v1/applications', applicationRoutes(applicationController));
 app.use('/api/v1/review', reviewRoutes(reviewController));
 app.use('/api/v1/approval', approvalRoutes(approvalController));

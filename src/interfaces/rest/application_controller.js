@@ -5,6 +5,7 @@
 const Joi = require('joi');
 const { Result } = require('../../application/dto/result');
 const { SubmitApplicationCommand } = require('../../application/commands/submit_application_command');
+const { clerkClient } = require('@clerk/express');
 
 class ApplicationController {
   constructor(
@@ -13,7 +14,8 @@ class ApplicationController {
     repository,
     settlePaymentHandler,
     uploadAttachmentHandler,
-    cancelApplicationHandler
+    cancelApplicationHandler,
+    pdfService
   ) {
     this.submitApplicationHandler = submitApplicationHandler;
     this.getApplicationByIdQuery = getApplicationByIdQuery;
@@ -21,6 +23,7 @@ class ApplicationController {
     this.settlePaymentHandler = settlePaymentHandler;
     this.uploadAttachmentHandler = uploadAttachmentHandler;
     this.cancelApplicationHandler = cancelApplicationHandler;
+    this.pdfService = pdfService;
   }
 
   async createApplication(req, res) {
@@ -96,6 +99,60 @@ class ApplicationController {
     const command = { applicationId: req.params.id };
     const result = await this.cancelApplicationHandler.handle(command);
     res.json({ ...result, timestamp: new Date() });
+  }
+
+  async downloadLicense(req, res) {
+    const result = await this.getApplicationByIdQuery.execute(req.params.id);
+    if (!result.success) return res.status(404).json({ ...result, timestamp: new Date() });
+
+    const application = result.data;
+
+    // Zero Trust Security check
+    if (req.user.userId !== application.applicantId) {
+      return res.status(403).json(Result.failure('Forbidden', 403));
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="trade-license-${application.id}.pdf"`);
+
+    await this.pdfService.generateLicense(application, res);
+  }
+
+  async verifyLicensePublic(req, res) {
+    try {
+      const result = await this.getApplicationByIdQuery.execute(req.params.id);
+      if (!result.success) {
+        return res.status(404).json({ success: false, error: 'License not found' });
+      }
+
+      const application = result.data;
+      
+      let ownerInitials = 'N/A';
+      try {
+        const user = await clerkClient.users.getUser(application.applicantId);
+        if (user) {
+          const first = user.firstName ? user.firstName[0].toUpperCase() + '.' : '';
+          const last = user.lastName ? user.lastName[0].toUpperCase() + '.' : '';
+          ownerInitials = `${first}${last}`.trim() || 'User';
+        }
+      } catch (err) {
+        console.error('Failed to fetch user initials for verification:', err.message);
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: application.id,
+          status: application.status,
+          licenseType: application.licenseType,
+          issueDate: application.createdAt, // Approximating issue date
+          ownerInitials
+        }
+      });
+    } catch (err) {
+      console.error('Error in verifyLicensePublic:', err);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
   }
 }
 
