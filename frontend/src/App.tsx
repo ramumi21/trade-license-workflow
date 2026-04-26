@@ -8,6 +8,7 @@ import { ApprovalDashboard } from './features/approvals/components/ApprovalDashb
 import { Dashboard } from './features/dashboard/components/Dashboard'
 import { SignInPage } from './pages/auth/SignInPage'
 import { SignUpPage } from './pages/auth/SignUpPage'
+import { VerifyLicensePage } from './pages/public/VerifyLicensePage'
 import { Toaster } from '@/components/ui/toaster'
 
 const queryClient = new QueryClient()
@@ -30,6 +31,7 @@ function App() {
             <Route path="/sign-up/*" element={<SignUpPage />} />
 
             {/* Public or common routes */}
+            <Route path="/verify/:id" element={<VerifyLicensePage />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Dashboard />
