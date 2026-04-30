@@ -1,3 +1,4 @@
+/** @file pdf_service.js - Service for generating secure, watermarked PDF trade licenses with dynamic QR codes. */
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 

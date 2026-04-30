@@ -1,3 +1,4 @@
+/** @file VerifyLicensePage.tsx - Public-facing verification route for scanning QR codes and validating license authenticity. */
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';

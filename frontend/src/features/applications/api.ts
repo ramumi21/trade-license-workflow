@@ -1,3 +1,4 @@
+/** @file api.ts - Central API utility for backend communication, handling license data and binary PDF downloads. */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useApi } from "@/hooks/useApi";

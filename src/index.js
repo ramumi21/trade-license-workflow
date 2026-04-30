@@ -19,7 +19,7 @@ const { TradeLicenseRepositoryImpl } = require('./infrastructure/persistence/tra
 const { LocalFileStorageService } = require('./infrastructure/storage/local_file_storage_service');
 const { DomainEventPublisher } = require('./infrastructure/events/domain_event_publisher');
 const { PdfGenerationService } = require('./infrastructure/services/pdf_generation_service');
-
+const { EmailService } = require('./infrastructure/email/email_service');
 const { ApplicationNumberGenerator } = require('./application/services/application_number_generator');
 
 const { SubmitApplicationHandler } = require('./application/handlers/submit_application_handler');
@@ -68,10 +68,11 @@ const fileStorageService = new LocalFileStorageService();
 const domainEventPublisher = new DomainEventPublisher();
 const applicationNumberGenerator = new ApplicationNumberGenerator();
 const pdfGenerationService = new PdfGenerationService();
+const emailService = new EmailService();
 
 const submitApplicationHandler = new SubmitApplicationHandler(repository, applicationNumberGenerator, domainEventPublisher);
 const reviewApplicationHandler = new ReviewApplicationHandler(repository, domainEventPublisher);
-const approveApplicationHandler = new ApproveApplicationHandler(repository, domainEventPublisher);
+const approveApplicationHandler = new ApproveApplicationHandler(repository, domainEventPublisher, emailService);
 const cancelApplicationHandler = new CancelApplicationHandler(repository);
 const uploadAttachmentHandler = new UploadAttachmentHandler(repository, fileStorageService);
 const settlePaymentHandler = new SettlePaymentHandler(repository);
@@ -90,7 +91,11 @@ const applicationController = new ApplicationController(
   pdfGenerationService
 );
 const reviewController = new ReviewController(getApplicationsForReviewerQuery, reviewApplicationHandler);
-const approvalController = new ApprovalController(getApplicationsForApproverQuery, approveApplicationHandler);
+const approvalController = new ApprovalController(
+  getApplicationsForApproverQuery,
+  approveApplicationHandler,
+  getApplicationByIdQuery
+);
 
 const { AnalyticsRepository } = require('./infrastructure/persistence/analytics_repository');
 const { AnalyticsController } = require('./interfaces/rest/analytics_controller');

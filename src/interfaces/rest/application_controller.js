@@ -1,3 +1,4 @@
+/** @file application_controller.js - Main controller for managing trade license lifecycles, including approval and issuance logic. */
 /**
  * XJ3395 — Interfaces Layer
  * What this file handles: Application controller.

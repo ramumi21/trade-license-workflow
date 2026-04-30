@@ -22,7 +22,7 @@ class ReviewController {
       comment: Joi.string().allow('').optional()
     });
     const { error, value } = schema.validate(req.body);
-    if (error) throw new Error(error.details[0].message);
+    if (error) throw error;
 
     const command = {
       applicationId: req.params.id,

@@ -1,3 +1,4 @@
+/** @file application_routes.js - Route definitions for trade applications, separating protected customer/admin paths and public verification endpoints. */
 /**
  * XJ3395 — Interfaces Layer
  * What this file handles: Application routes.
