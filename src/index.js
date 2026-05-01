@@ -16,7 +16,7 @@ const { errorMiddleware } = require('./interfaces/middleware/error_middleware');
 const { clerkMiddleware } = require('@clerk/express');
 
 const { TradeLicenseRepositoryImpl } = require('./infrastructure/persistence/trade_license_repository_impl');
-const { LocalFileStorageService } = require('./infrastructure/storage/local_file_storage_service');
+const { SupabaseStorageService } = require('./infrastructure/storage/supabase_storage_service');
 const { DomainEventPublisher } = require('./infrastructure/events/domain_event_publisher');
 const { PdfGenerationService } = require('./infrastructure/services/pdf_generation_service');
 const { EmailService } = require('./infrastructure/email/email_service');
@@ -64,7 +64,7 @@ app.use(clerkMiddleware());
 app.use(authMiddleware);
 
 const repository = new TradeLicenseRepositoryImpl();
-const fileStorageService = new LocalFileStorageService();
+const fileStorageService = new SupabaseStorageService();
 const domainEventPublisher = new DomainEventPublisher();
 const applicationNumberGenerator = new ApplicationNumberGenerator();
 const pdfGenerationService = new PdfGenerationService();

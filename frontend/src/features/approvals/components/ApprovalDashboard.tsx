@@ -11,7 +11,7 @@ export function ApprovalDashboard() {
   if (isLoading) {
     return (
       <div className="space-y-4 max-w-6xl mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">Approval Queue</h1>
+        <h1 className="text-3xl font-bold mb-6">Approver Waiting List</h1>
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-20 w-full" />
@@ -37,7 +37,7 @@ export function ApprovalDashboard() {
     <div className="max-w-6xl mx-auto p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Approval Queue</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Approver Waiting List</h1>
           <p className="text-muted-foreground mt-1">Final legal authorization for reviewed trade license applications.</p>
         </div>
         <div className="flex items-center space-x-2 bg-green-100 text-green-800 px-4 py-2 rounded-full border border-green-200">

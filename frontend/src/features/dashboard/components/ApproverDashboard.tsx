@@ -25,7 +25,7 @@ export function ApproverDashboard() {
         </div>
         <Link to="/approve">
           <Button size="lg" className="bg-purple-600 hover:bg-purple-700 font-semibold shadow-md">
-            <ShieldCheck className="w-5 h-5 mr-2" /> Authorization Workspace
+            <ShieldCheck className="w-5 h-5 mr-2" /> Approver Waiting List
           </Button>
         </Link>
       </div>

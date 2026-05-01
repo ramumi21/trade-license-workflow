@@ -24,7 +24,7 @@ export function ReviewerDashboard() {
         </div>
         <Link to="/review">
           <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 font-semibold shadow-md">
-            <SearchCheck className="w-5 h-5 mr-2" /> Open Review Queue
+            <SearchCheck className="w-5 h-5 mr-2" /> Reviewer Waiting List
           </Button>
         </Link>
       </div>
