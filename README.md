@@ -10,7 +10,7 @@ The system is composed of a **Node.js backend** and a **React frontend**, integr
 Follows Domain-Driven Design (DDD) and Clean Architecture principles:
 1. **Domain Layer**: Contains business entities, value objects, domain events, and repository interfaces. No external dependencies.
 2. **Application Layer**: Contains Use Cases (CQRS patterns), DTOs, Handlers, and application logic.
-3. **Infrastructure Layer**: Implements persistence (PostgreSQL via node-pg-migrate), file storage (Multer), and PDF generation.
+3. **Infrastructure Layer**: Implements persistence (PostgreSQL via node-pg-migrate), file storage (Supabase Storage), PDF generation, and Automated Email Notifications (Nodemailer).
 4. **Interfaces Layer**: Exposes REST APIs (Express), routing, controllers, and middlewares (including Clerk Auth).
 
 ### Frontend (React / Vite / TypeScript)
@@ -44,6 +44,8 @@ APPROVED (terminal)
 - Node.js (v18+)
 - Docker & Docker Compose
 - A [Clerk](https://clerk.com) account (for authentication)
+- A [Supabase](https://supabase.com) account (for cloud file storage)
+- SMTP Credentials (e.g., [Mailtrap](https://mailtrap.io)) for automated emails
 
 ## Project Structure
 
@@ -51,7 +53,7 @@ APPROVED (terminal)
 - `/frontend` - Frontend React application
 - `/src` - Backend source code
 - `/src/infrastructure/persistence/migrations` - Database migrations
-- `/uploads` - Locally stored attachments and generated PDFs
+- `/uploads` - Temporary local directory for file processing before cloud upload
 
 ## How to Run Locally
 
@@ -101,6 +103,18 @@ The project requires `.env` files in both the root and `frontend` directories co
 ```env
 PORT=3000
 DATABASE_URL=postgres://xj3395_user:xj3395_pass@localhost:5433/xj3395
+
+# Supabase Storage
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_BUCKET_NAME=trade-license-uploads
+
+# Email Configuration
+SMTP_HOST=sandbox.smtp.mailtrap.io
+SMTP_PORT=2525
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_pass
+EMAIL_FROM="Trade License System" <noreply@tradelicense.gov.et>
 ```
 
 **Frontend `.env` Example (`frontend/.env`):**
