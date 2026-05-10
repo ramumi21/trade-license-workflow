@@ -1,0 +1,1102 @@
+[
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "System Purpose"
+  },
+  {
+    "style": "None",
+    "text": "The XJ3395 Trade License Workflow System is an enterprise-grade web application that digitizes the end-to-end lifecycle of trade license applications. It replaces a historically manual, paper-based bureaucratic process with a secure digital portal \u2014 giving citizens a transparent way to apply and track licenses, and government officials a structured dashboard to review, verify, and authorize issuance."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "System Roles"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "The Business Workflow \u2014 End to End"
+  },
+  {
+    "style": "None",
+    "text": "Understanding the full human workflow is essential before reading any code. Here is the complete lifecycle of a single trade license application:"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "An Applicant logs into the public portal (authenticated via Clerk). They fill in their application details including license type and commodity information."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The Applicant settles the required application fee and uploads supporting documents (e.g., national ID, business registration certificate). These files are stored securely in Supabase cloud storage."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The Applicant clicks Submit. The system validates that payment is settled and at least one document is attached before transitioning the status from PENDING to SUBMITTED."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "A Reviewer logs into their dashboard and sees the application in the Reviewer Waiting List. They inspect each uploaded document."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "If a document is unacceptable, the Reviewer selects Adjust and leaves a comment \u2014 the application returns to ADJUSTED and the Applicant is notified to re-upload. If all documents are in order, the Reviewer selects Accept."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The application transitions to UNDER_REVIEW and appears in the Approver Waiting List."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The Approver reviews the full application history including all Reviewer comments. Upon clicking Approve, three things happen automatically: (a) status changes to APPROVED, (b) an official PDF certificate with a unique QR code is generated, and (c) an automated approval email is sent to the Applicant."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The Applicant receives the email, logs in, and downloads their official trade license PDF from the portal. Anyone can scan the QR code on the license to verify its authenticity via the public /verify/:id endpoint."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Technology Stack"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "How to Run Locally"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Clone the repository:"
+  },
+  {
+    "style": "None",
+    "text": "git clone <repo-url> && cd trade-license-workflow"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Start the PostgreSQL database container:"
+  },
+  {
+    "style": "None",
+    "text": "docker-compose up -d"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Install backend dependencies:"
+  },
+  {
+    "style": "None",
+    "text": "npm install"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Run database migrations to create all tables:"
+  },
+  {
+    "style": "None",
+    "text": "npm run migrate:up"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Create your .env file from the example and fill in values:"
+  },
+  {
+    "style": "None",
+    "text": "cp .env.example .env"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Start the backend development server (runs on http://localhost:3000):"
+  },
+  {
+    "style": "None",
+    "text": "npm run dev"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "In a new terminal, install and start the frontend:"
+  },
+  {
+    "style": "None",
+    "text": "cd frontend && npm install && npm run dev"
+  },
+  {
+    "style": "None",
+    "text": "The frontend will be available at http://localhost:5173. The Swagger API docs are at http://localhost:3000/api-docs."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Environment Variables"
+  },
+  {
+    "style": "Heading 3",
+    "text": "Backend (.env)"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "Frontend (.env)"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Clean Architecture \u2014 What It Means Here"
+  },
+  {
+    "style": "None",
+    "text": "Clean Architecture is not an abstract concept in this project \u2014 it is enforced by a strict folder structure and a single inviolable rule: the Dependency Rule. Source code dependencies may only point inward, toward the Domain layer. The Domain knows nothing about PostgreSQL, Express, or Supabase. The Application layer knows the Domain. The Infrastructure layer implements Application interfaces. The Interfaces layer calls Application handlers."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "The Four Layers"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "The Dependency Rule \u2014 Concrete Example"
+  },
+  {
+    "style": "None",
+    "text": "The ApproveApplicationHandler (Application layer) needs to send an email. Here is how the Dependency Rule is respected:"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "IEmailService is defined in src/application/interfaces/i_email_service.js \u2014 this is a pure JavaScript contract with no implementation."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "ApproveApplicationHandler imports IEmailService (the interface) \u2014 NOT EmailService (the Nodemailer implementation)."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "EmailService in src/infrastructure/email/email_service.js implements IEmailService using Nodemailer."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "src/index.js wires them: new ApproveApplicationHandler(repo, new EmailService()). The handler never knows Nodemailer exists."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Consequence: you can swap Nodemailer for AWS SES by writing a new class and changing one line in index.js. Zero domain or application code changes."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Why No ORM?"
+  },
+  {
+    "style": "None",
+    "text": "This project deliberately avoids ORMs like Prisma or TypeORM. ORMs typically use the Active Record pattern, which tightly couples domain entities to database schema \u2014 your entity becomes a 'smart database row' rather than a pure business object."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": "Instead, TradeLicenseRepositoryImpl manually maps database rows to Domain Entities in the _buildDomainModel(row) method. This means TradeLicenseApplication is a pure JavaScript class with encapsulated business behaviors \u2014 it has no idea it is ever persisted to PostgreSQL."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Dependency Injection \u2014 How index.js Wires Everything"
+  },
+  {
+    "style": "None",
+    "text": "In src/index.js, every class is instantiated manually and passed into the constructors of the classes that need them. This is Pure DI \u2014 no framework magic, no decorators."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": "const db = new Pool({ connectionString: process.env.DATABASE_URL });"
+  },
+  {
+    "style": "None",
+    "text": "const repo          = new TradeLicenseRepositoryImpl(db);"
+  },
+  {
+    "style": "None",
+    "text": "const emailService  = new EmailService();"
+  },
+  {
+    "style": "None",
+    "text": "const storageService = new SupabaseStorageService();"
+  },
+  {
+    "style": "None",
+    "text": "const approveHandler = new ApproveApplicationHandler(repo, emailService);"
+  },
+  {
+    "style": "None",
+    "text": "const approvalController = new ApprovalController(approveHandler);"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": "Every dependency relationship is visible in a single file. There is no annotation scanning, no IoC container magic. When something breaks, you trace it here first."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Overview"
+  },
+  {
+    "style": "None",
+    "text": "The Domain layer is the heart of the application. It has zero npm dependencies (except uuid for ID generation) and knows nothing about HTTP, databases, or external APIs. If you delete every other layer, the Domain layer should still compile and make sense as a standalone business model."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "TradeLicenseApplication \u2014 The Aggregate Root"
+  },
+  {
+    "style": "Heading 3",
+    "text": "File: src/domain/model/trade_license_application.js"
+  },
+  {
+    "style": "None",
+    "text": "This is the most important class in the entire codebase. It is the Aggregate Root \u2014 the single point of entry for all state changes to an application and its related objects. No code outside this class is permitted to directly modify an application's status, attachments, or comments."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "Properties"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "Methods and Business Rules"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "submit() \u2014 Validates: status must be PENDING or ADJUSTED; payment.isSettled must be true; at least one attachment must exist. On success: transitions status to SUBMITTED, registers ApplicationSubmittedEvent. Throws: PaymentNotSettledException, InvalidWorkflowTransitionException."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "review(action, commentMessage, reviewerId) \u2014 Validates: status must be SUBMITTED. Applies action: ACCEPT \u2192 UNDER_REVIEW; REJECT \u2192 REJECTED; ADJUST \u2192 ADJUSTED. Appends a new WorkflowComment. Throws: InvalidWorkflowTransitionException."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "approve(action, commentMessage, approverId) \u2014 Validates: status must be UNDER_REVIEW. Applies action: APPROVE \u2192 APPROVED (raises ApplicationApprovedEvent); REJECT \u2192 REJECTED; REREVIEW \u2192 RE_REVIEW. Throws: InvalidWorkflowTransitionException."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "registerEvent(event) \u2014 Internal helper: pushes a DomainEvent to the domainEvents array without publishing it. Events are published by the handler after a successful save."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Payment \u2014 Value Object"
+  },
+  {
+    "style": "Heading 3",
+    "text": "File: src/domain/model/payment.js"
+  },
+  {
+    "style": "None",
+    "text": "Payment has no identity (no ID field). Two Payment instances with the same transactionId, amount, and currency are conceptually identical. Its key property is isSettled (boolean) which gates the ability to submit an application. It is stored as flat columns on the trade_license_applications table (payment_amount, payment_currency, payment_is_settled, etc.) and reconstructed by the repository's _buildDomainModel method."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Attachment & WorkflowComment \u2014 Child Entities"
+  },
+  {
+    "style": "None",
+    "text": "Both are child Entities of the TradeLicenseApplication aggregate. They have their own UUIDs but have no meaning outside the aggregate. They are accessed and mutated exclusively through methods on TradeLicenseApplication \u2014 code elsewhere never directly creates or modifies them. The repository saves them atomically as part of saving the aggregate."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Workflow Status \u2014 State Machine"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Domain Repository Interface"
+  },
+  {
+    "style": "Heading 3",
+    "text": "File: src/domain/repository/trade_license_application_repository.js"
+  },
+  {
+    "style": "None",
+    "text": "This is a pure interface \u2014 it contains method signatures only, no SQL, no imports, just JSDoc documentation. It defines the contract that any persistence implementation must fulfill:"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "findById(id) \u2014 Returns a fully-hydrated TradeLicenseApplication or null."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "findByApplicantId(id) \u2014 Returns all applications for a given Clerk user ID."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "findForReviewerQueue() \u2014 Returns all SUBMITTED and ADJUSTED applications."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "findForApproverQueue() \u2014 Returns all UNDER_REVIEW and RE_REVIEW applications."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "save(application) \u2014 Inserts a new application plus all child entities."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "update(application) \u2014 Upserts the application and persists any new child entities added since the last save."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Overview"
+  },
+  {
+    "style": "None",
+    "text": "The Application layer coordinates use cases. A Handler represents exactly one thing the system can do. It receives a command (a plain data object), fetches the relevant domain entity, calls a method on it, and saves it back. It does not contain business rules \u2014 those live in the Domain. It does not contain SQL \u2014 those live in Infrastructure. It is the orchestrator."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Handlers"
+  },
+  {
+    "style": "Heading 3",
+    "text": "submit_application_handler.js"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "approve_application_handler.js"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "upload_attachment_handler.js"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "The Result Pattern"
+  },
+  {
+    "style": "None",
+    "text": "Every handler returns a Result object, not raw data or thrown errors. Controllers check Result.isSuccess before sending the HTTP response. This makes error handling explicit and prevents uncaught promise rejections from reaching the error middleware for expected failures."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": "// In handler:"
+  },
+  {
+    "style": "None",
+    "text": "return Result.success({ applicationId: app.id });"
+  },
+  {
+    "style": "None",
+    "text": "return Result.fail('Application not found', 404);"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": "// In controller:"
+  },
+  {
+    "style": "None",
+    "text": "const result = await handler.execute(command);"
+  },
+  {
+    "style": "None",
+    "text": "if (!result.isSuccess) return res.status(result.statusCode).json({ error: result.error });"
+  },
+  {
+    "style": "None",
+    "text": "return res.status(200).json(result.value);"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Application Interfaces"
+  },
+  {
+    "style": "None",
+    "text": "These are the contracts that Infrastructure must fulfill. The Application layer imports these interfaces \u2014 never the concrete implementations."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "IStorageService (i_storage_service.js): uploadFile(fileBuffer, originalFilename, mimeType) \u2192 Promise<string> (returns public URL)"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "IEmailService (i_email_service.js): sendApprovalEmail(to, applicantName, applicationId) \u2192 Promise<void>"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Mappers"
+  },
+  {
+    "style": "Heading 3",
+    "text": "application_mapper.js"
+  },
+  {
+    "style": "None",
+    "text": "Converts raw Domain Entities into safe, flat DTO objects before they reach the HTTP response. This prevents leaking internal domain properties (like domainEvents) to API consumers and allows the API response shape to evolve independently of the domain model."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "toApplicationDetailDto \u2014 Full detail for single-application views (includes comments, attachments array with URLs)"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "toApplicationSummaryDto \u2014 Lightweight summary for list/queue views (omits comment history and attachment details)"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Persistence"
+  },
+  {
+    "style": "Heading 3",
+    "text": "db.js"
+  },
+  {
+    "style": "None",
+    "text": "Initializes and exports a single pg.Pool instance configured from DATABASE_URL. Includes an on('error') listener that logs idle client errors without crashing the server. The pool is passed as a constructor argument to all repository implementations \u2014 it is never imported directly by repositories (inversion of control)."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "trade_license_repository_impl.js"
+  },
+  {
+    "style": "None",
+    "text": "The most complex file in the infrastructure layer. It implements the IApplicationRepository interface with raw SQL queries wrapped in pg transactions."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "update(application) \u2014 Wraps everything in BEGIN/COMMIT. First UPSERTs the main applications row. Then iterates application.attachments and INSERTs any Attachment that has no id yet (new ones). Does the same for workflow_comments. If any step throws, the transaction is rolled back via ROLLBACK in the catch block."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "findById(id) \u2014 JOINs trade_license_applications with attachments and workflow_comments. Returns one row per attachment/comment combination. The _buildDomainModel method de-duplicates these rows by grouping attachments and comments back into arrays."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "_buildDomainModel(rows) \u2014 The hydration method. Takes raw database rows and constructs a fully populated TradeLicenseApplication instance with nested Attachment and WorkflowComment objects. This is where column names (snake_case) are mapped to domain property names (camelCase)."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "findForReviewerQueue() and findForApproverQueue() \u2014 Filtered queries that return only applications in relevant statuses. Used to populate the respective admin dashboards."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "analytics_repository.js"
+  },
+  {
+    "style": "None",
+    "text": "Contains GROUP BY SQL queries that power the admin dashboard charts. Crucially, it does NOT instantiate domain entities \u2014 it returns raw aggregated data directly. This is the CQRS (Command Query Responsibility Segregation) pattern in action: reads for display purposes bypass the full domain model for performance."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Storage Service"
+  },
+  {
+    "style": "Heading 3",
+    "text": "src/infrastructure/storage/supabase_storage_service.js"
+  },
+  {
+    "style": "None",
+    "text": "Implements IStorageService using the @supabase/supabase-js SDK. The uploadFile method generates a unique file key in the format Date.now()-uuid-originalFilename to guarantee no collisions. It calls supabase.storage.from(bucketName).upload(key, buffer, { contentType: mimeType }), then retrieves and returns the public URL via getPublicUrl(key). The returned URL is what gets stored in the attachments.file_path database column."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Email Service"
+  },
+  {
+    "style": "Heading 3",
+    "text": "src/infrastructure/email/email_service.js"
+  },
+  {
+    "style": "None",
+    "text": "Implements IEmailService using Nodemailer. Creates a transporter from SMTP credentials on initialization. The sendApprovalEmail method formats an HTML email body containing the applicant's name, application number, and a link to log in and download their license. Errors are caught and logged \u2014 they do not throw, ensuring email failure never rolls back an approval."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "PDF Generation Service"
+  },
+  {
+    "style": "Heading 3",
+    "text": "src/infrastructure/services/pdf_generation_service.js"
+  },
+  {
+    "style": "None",
+    "text": "Uses pdfkit to draw an official-looking certificate layout. Generates a QR code data URL via the qrcode package that encodes the public /verify/:id URL. This QR code is embedded in the PDF so anyone can scan it and independently verify the license's authenticity. The PDF is streamed directly to the HTTP response \u2014 it is never written to disk."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Database Migrations"
+  },
+  {
+    "style": "Heading 3",
+    "text": "src/infrastructure/persistence/migrations/"
+  },
+  {
+    "style": "None",
+    "text": "Managed by node-pg-migrate. Each migration file exports an up and down function. Running npm run migrate:up applies all pending migrations in order."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Controllers"
+  },
+  {
+    "style": "Heading 3",
+    "text": "application_controller.js"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "POST /api/v1/applications \u2014 createApplication: validates licenseType via Joi, constructs SubmitApplicationCommand, calls submitHandler.execute()."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "POST /api/v1/applications/:id/submit \u2014 submitApplication: fetches existing draft, calls submit handler with existing ID."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "POST /api/v1/applications/:id/attachments \u2014 uploadAttachment: runs multer middleware first; verifies req.file exists; passes temp file path and metadata to UploadAttachmentHandler."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "GET /api/v1/applications/:id/download-license \u2014 downloadLicense: Zero Trust security check (req.user.userId must equal application.applicantId \u2014 not just role, but ownership). Streams the generated PDF directly to the response."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "GET /api/v1/verify/:id \u2014 verifyLicensePublic: Public endpoint (no auth). Calls clerkClient.users.getUser() to safely resolve the applicant's initials for display without exposing full PII."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 3",
+    "text": "approval_controller.js"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "PUT /api/v1/approval/:id/action \u2014 approveAction: validates action via Joi. If action is APPROVE, calls clerkClient.users.getUser(applicantId) to fetch the real email address and passes it in the command payload. Calls ApproveApplicationHandler.execute()."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Middleware"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Full Route Table"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Trace 1: Applicant Uploads an Attachment"
+  },
+  {
+    "style": "None",
+    "text": "This trace follows a file upload from the HTTP request to the Supabase bucket and back."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Trace 2: Approver Approves an Application"
+  },
+  {
+    "style": "None",
+    "text": "This trace shows the approval flow including email dispatch."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Trace 3: Error Case \u2014 Approving a Non-Reviewable Application"
+  },
+  {
+    "style": "None",
+    "text": "What happens when an Approver tries to approve an application that is still in PENDING status:"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Request hits PUT /api/v1/approval/:id/action with action: APPROVE."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "approve_application_handler.js calls repository.findById(id) \u2014 application is loaded with status PENDING."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "app.approve() is called. Inside TradeLicenseApplication.approve(), the method checks: if (this.status !== WorkflowStatus.UNDER_REVIEW). It is PENDING, so the check fails."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The method throws new InvalidWorkflowTransitionException('Cannot approve an application that is not UNDER_REVIEW')."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The exception is not caught in the handler or controller \u2014 it bubbles up."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Express catches it in error_middleware.js. The middleware checks instanceof InvalidWorkflowTransitionException and maps it to HTTP 422 Unprocessable Entity."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "The client receives: { error: 'Cannot approve an application that is not UNDER_REVIEW', statusCode: 422 }."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "DDD Building Blocks \u2014 Identified"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "The Aggregate Boundary"
+  },
+  {
+    "style": "None",
+    "text": "The Aggregate boundary is one of the most important design decisions in this project. TradeLicenseApplication, Attachment, and WorkflowComment form a single aggregate. This means:"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "You never query attachments or comments directly from outside the aggregate \u2014 you always load the full TradeLicenseApplication and access them via app.attachments or app.comments."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "You never save an attachment in isolation \u2014 it is always saved as part of the aggregate transaction in repository.update(app)."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "This guarantees that an attachment always has a valid parent application, and a comment always has the correct role and reviewer ID."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "How to Add a New Database Column"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Create a migration file: npm run migrate:create -- add_column_to_applications"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "In the migration, write: ALTER TABLE trade_license_applications ADD COLUMN new_field VARCHAR;"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Add the property to TradeLicenseApplication constructor in src/domain/model/trade_license_application.js"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Update _buildDomainModel() in TradeLicenseRepositoryImpl to map the new column: newField: row.new_field"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Update the INSERT and UPDATE SQL queries in the repository to include the new column."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Update toApplicationDetailDto in application_mapper.js to include the field in API responses."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Run npm run migrate:up to apply the migration."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "How to Add a New Use Case"
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Create a new command file in src/application/commands/ (plain data object, no logic)."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Create a new handler in src/application/handlers/ with a constructor that injects needed dependencies and an execute(command) method."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Create the controller method in the appropriate controller in src/interfaces/rest/. Validate input with Joi. Call the handler. Return Result."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Add the route in src/interfaces/routes/ with appropriate auth and role middleware."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Wire the handler and inject into the controller in src/index.js."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "Common Mistakes to Avoid"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "Heading 2",
+    "text": "End-to-End Debugging Guide"
+  },
+  {
+    "style": "None",
+    "text": "When a request fails, follow this triage order:"
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Check the browser Network tab for the HTTP status code and response body."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "HTTP 401 \u2014 JWT is missing or expired. Check Clerk token expiry or middleware bypass config."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "HTTP 403 \u2014 Role mismatch. Check the user's publicMetadata.role in the Clerk dashboard."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "HTTP 422 \u2014 Business rule violation in the Domain layer. Read the error message \u2014 it will name the exact invalid transition. Fix the workflow state, not the code."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "HTTP 500 \u2014 Check the server terminal for the stack trace. Most 500s are database mapping errors in _buildDomainModel or missing environment variables."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "File upload failures \u2014 Check the uploads/ directory for leftover temp files and verify SUPABASE_SERVICE_ROLE_KEY is correctly set."
+  },
+  {
+    "style": "List Paragraph",
+    "text": "Email not received \u2014 Check SMTP credentials. Verify the email was fire-and-forget (check server logs for the email service error log, not the API response)."
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": ""
+  },
+  {
+    "style": "None",
+    "text": "End of Document"
+  },
+  {
+    "style": "None",
+    "text": "XJ3395 Trade License Workflow System \u2014 Technical Reference Manual v1.0"
+  }
+]

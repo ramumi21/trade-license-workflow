@@ -3,6 +3,9 @@ import { usePendingApprovals, type PendingApproval } from "../api";
 import { ApprovalTable } from "./ApprovalTable";
 import { ApprovalPanel } from "./ApprovalPanel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export function ApprovalDashboard() {
   const { data: approvals, isLoading, isError, error } = usePendingApprovals();
@@ -37,8 +40,15 @@ export function ApprovalDashboard() {
     <div className="max-w-6xl mx-auto p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Approver Waiting List</h1>
-          <p className="text-muted-foreground mt-1">Final legal authorization for reviewed trade license applications.</p>
+          <div className="flex items-center gap-4 mb-2">
+            <Link to="/">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight m-0">Approver Waiting List</h1>
+          </div>
+          <p className="text-muted-foreground mt-1 ml-12">Final legal authorization for reviewed trade license applications.</p>
         </div>
         <div className="flex items-center space-x-2 bg-green-100 text-green-800 px-4 py-2 rounded-full border border-green-200">
           <span className="relative flex h-3 w-3">

@@ -10,9 +10,20 @@ class ApplicationReadRepository extends IApplicationReadRepository {
     const res = await pool.query(`
       SELECT 
         a.id, a.application_number, a.license_type, a.status, a.applicant_id, a.created_at,
-        a.payment_is_settled
+        a.payment_is_settled,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', att.id,
+              'fileName', att.file_name,
+              'documentType', att.document_type
+            )
+          ) FILTER (WHERE att.id IS NOT NULL), '[]'
+        ) as attachments
       FROM trade_license_applications a
+      LEFT JOIN attachments att ON a.id = att.application_id
       WHERE a.status IN ('SUBMITTED', 'ADJUSTED', 'RE_REVIEW')
+      GROUP BY a.id
       ORDER BY a.created_at ASC
     `);
     return res.rows.map(this._mapToSummaryDto);
@@ -22,9 +33,20 @@ class ApplicationReadRepository extends IApplicationReadRepository {
     const res = await pool.query(`
       SELECT 
         a.id, a.application_number, a.license_type, a.status, a.applicant_id, a.created_at,
-        a.payment_is_settled
+        a.payment_is_settled,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', att.id,
+              'fileName', att.file_name,
+              'documentType', att.document_type
+            )
+          ) FILTER (WHERE att.id IS NOT NULL), '[]'
+        ) as attachments
       FROM trade_license_applications a
+      LEFT JOIN attachments att ON a.id = att.application_id
       WHERE a.status = 'UNDER_REVIEW'
+      GROUP BY a.id
       ORDER BY a.created_at ASC
     `);
     return res.rows.map(this._mapToSummaryDto);
@@ -34,9 +56,20 @@ class ApplicationReadRepository extends IApplicationReadRepository {
     const res = await pool.query(`
       SELECT 
         a.id, a.application_number, a.license_type, a.status, a.applicant_id, a.created_at,
-        a.payment_is_settled
+        a.payment_is_settled,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', att.id,
+              'fileName', att.file_name,
+              'documentType', att.document_type
+            )
+          ) FILTER (WHERE att.id IS NOT NULL), '[]'
+        ) as attachments
       FROM trade_license_applications a
+      LEFT JOIN attachments att ON a.id = att.application_id
       WHERE a.applicant_id = $1
+      GROUP BY a.id
       ORDER BY a.created_at DESC
     `, [id]);
     return res.rows.map(this._mapToSummaryDto);
@@ -91,7 +124,7 @@ class ApplicationReadRepository extends IApplicationReadRepository {
       status: row.status,
       applicantId: row.applicant_id,
       paymentStatus: row.payment_is_settled ? 'PAID' : 'UNPAID',
-      attachments: [], // Queries don't join attachments for queues yet
+      attachments: row.attachments || [],
       createdAt: row.created_at
     };
   }

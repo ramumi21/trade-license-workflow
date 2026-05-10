@@ -3,6 +3,9 @@ import { usePendingReviews, type PendingReview } from "../api";
 import { ReviewTable } from "./ReviewTable";
 import { InspectionPanel } from "./InspectionPanel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export function ReviewDashboard() {
   const { data: reviews, isLoading, isError, error } = usePendingReviews();
@@ -37,8 +40,15 @@ export function ReviewDashboard() {
     <div className="max-w-6xl mx-auto p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reviewer Waiting List</h1>
-          <p className="text-muted-foreground mt-1">Manage and inspect pending trade license applications.</p>
+          <div className="flex items-center gap-4 mb-2">
+            <Link to="/">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight m-0">Reviewer Waiting List</h1>
+          </div>
+          <p className="text-muted-foreground mt-1 ml-12">Manage and inspect pending trade license applications.</p>
         </div>
         <div className="flex items-center space-x-2 bg-primary/10 text-primary px-4 py-2 rounded-full">
           <span className="relative flex h-3 w-3">
