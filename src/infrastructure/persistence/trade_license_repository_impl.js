@@ -16,24 +16,9 @@ class TradeLicenseRepositoryImpl extends TradeLicenseApplicationRepository {
     return await this._buildDomainModel(res.rows[0]);
   }
 
-  async findByApplicantId(applicantId) {
-    const res = await pool.query('SELECT * FROM trade_license_applications WHERE applicant_id = $1 ORDER BY created_at DESC', [applicantId]);
-    return Promise.all(res.rows.map(row => this._buildDomainModel(row)));
-  }
 
-  async findForReviewerQueue() {
-    const res = await pool.query(
-      "SELECT * FROM trade_license_applications WHERE status IN ('SUBMITTED', 'ADJUSTED', 'RE_REVIEW') ORDER BY created_at ASC"
-    );
-    return Promise.all(res.rows.map(row => this._buildDomainModel(row)));
-  }
 
-  async findForApproverQueue() {
-    const res = await pool.query(
-      "SELECT * FROM trade_license_applications WHERE status = 'UNDER_REVIEW' ORDER BY created_at ASC"
-    );
-    return Promise.all(res.rows.map(row => this._buildDomainModel(row)));
-  }
+
 
   async save(application) {
     return this.update(application); // using upsert

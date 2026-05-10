@@ -16,11 +16,14 @@ const { errorMiddleware } = require('./interfaces/middleware/error_middleware');
 const { clerkMiddleware } = require('@clerk/express');
 
 const { TradeLicenseRepositoryImpl } = require('./infrastructure/persistence/trade_license_repository_impl');
+const { ApplicationReadRepository } = require('./infrastructure/persistence/read_models/application_read_repository');
 const { SupabaseStorageService } = require('./infrastructure/storage/supabase_storage_service');
-const { DomainEventPublisher } = require('./infrastructure/events/domain_event_publisher');
+const { InMemoryEventBus } = require('./infrastructure/events/in_memory_event_bus');
 const { PdfGenerationService } = require('./infrastructure/services/pdf_generation_service');
 const { EmailService } = require('./infrastructure/email/email_service');
-const { ApplicationNumberGenerator } = require('./application/services/application_number_generator');
+const { ApplicationNumberService } = require('./domain/services/application_number_service');
+const { SequenceGenerator } = require('./infrastructure/persistence/sequence_generator');
+const { ClerkIdentityService } = require('./infrastructure/identity/clerk_identity_service');
 
 const { SubmitApplicationHandler } = require('./application/handlers/submit_application_handler');
 const { ReviewApplicationHandler } = require('./application/handlers/review_application_handler');
@@ -29,9 +32,12 @@ const { CancelApplicationHandler } = require('./application/handlers/cancel_appl
 const { UploadAttachmentHandler } = require('./application/handlers/upload_attachment_handler');
 const { SettlePaymentHandler } = require('./application/handlers/settle_payment_handler');
 
+const { SendApprovalEmailHandler } = require('./application/event_handlers/send_approval_email_handler');
+
 const { GetApplicationByIdQuery } = require('./application/queries/get_application_by_id_query');
 const { GetApplicationsForReviewerQuery } = require('./application/queries/get_applications_for_reviewer_query');
 const { GetApplicationsForApproverQuery } = require('./application/queries/get_applications_for_approver_query');
+const { VerifyLicenseQuery } = require('./application/queries/verify_license_query');
 
 const { ApplicationController } = require('./interfaces/rest/application_controller');
 const { ReviewController } = require('./interfaces/rest/review_controller');
@@ -64,22 +70,29 @@ app.use(clerkMiddleware());
 app.use(authMiddleware);
 
 const repository = new TradeLicenseRepositoryImpl();
+const readRepository = new ApplicationReadRepository();
 const fileStorageService = new SupabaseStorageService();
-const domainEventPublisher = new DomainEventPublisher();
-const applicationNumberGenerator = new ApplicationNumberGenerator();
+const eventBus = new InMemoryEventBus();
+const sequenceGenerator = new SequenceGenerator();
+const applicationNumberService = new ApplicationNumberService();
 const pdfGenerationService = new PdfGenerationService();
 const emailService = new EmailService();
+const identityService = new ClerkIdentityService();
 
-const submitApplicationHandler = new SubmitApplicationHandler(repository, applicationNumberGenerator, domainEventPublisher);
-const reviewApplicationHandler = new ReviewApplicationHandler(repository, domainEventPublisher);
-const approveApplicationHandler = new ApproveApplicationHandler(repository, domainEventPublisher, emailService);
+const sendApprovalEmailHandler = new SendApprovalEmailHandler(repository, identityService, emailService);
+eventBus.subscribe('ApplicationApprovedEvent', sendApprovalEmailHandler.handle);
+
+const submitApplicationHandler = new SubmitApplicationHandler(repository, sequenceGenerator, applicationNumberService, eventBus);
+const reviewApplicationHandler = new ReviewApplicationHandler(repository, eventBus);
+const approveApplicationHandler = new ApproveApplicationHandler(repository, eventBus);
 const cancelApplicationHandler = new CancelApplicationHandler(repository);
 const uploadAttachmentHandler = new UploadAttachmentHandler(repository, fileStorageService);
 const settlePaymentHandler = new SettlePaymentHandler(repository);
 
-const getApplicationByIdQuery = new GetApplicationByIdQuery(repository);
-const getApplicationsForReviewerQuery = new GetApplicationsForReviewerQuery(repository);
-const getApplicationsForApproverQuery = new GetApplicationsForApproverQuery(repository);
+const getApplicationByIdQuery = new GetApplicationByIdQuery(readRepository);
+const getApplicationsForReviewerQuery = new GetApplicationsForReviewerQuery(readRepository);
+const getApplicationsForApproverQuery = new GetApplicationsForApproverQuery(readRepository);
+const verifyLicenseQuery = new VerifyLicenseQuery(readRepository, identityService);
 
 const applicationController = new ApplicationController(
   submitApplicationHandler,
@@ -88,7 +101,9 @@ const applicationController = new ApplicationController(
   settlePaymentHandler,
   uploadAttachmentHandler,
   cancelApplicationHandler,
-  pdfGenerationService
+  pdfGenerationService,
+  readRepository,
+  verifyLicenseQuery
 );
 const reviewController = new ReviewController(getApplicationsForReviewerQuery, reviewApplicationHandler);
 const approvalController = new ApprovalController(

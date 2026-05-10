@@ -6,7 +6,7 @@
 const Joi = require('joi');
 const { Result } = require('../../application/dto/result');
 const { SubmitApplicationCommand } = require('../../application/commands/submit_application_command');
-const { clerkClient } = require('@clerk/express');
+
 
 class ApplicationController {
   constructor(
@@ -16,7 +16,9 @@ class ApplicationController {
     settlePaymentHandler,
     uploadAttachmentHandler,
     cancelApplicationHandler,
-    pdfService
+    pdfService,
+    readRepository,
+    verifyLicenseQuery
   ) {
     this.submitApplicationHandler = submitApplicationHandler;
     this.getApplicationByIdQuery = getApplicationByIdQuery;
@@ -25,6 +27,8 @@ class ApplicationController {
     this.uploadAttachmentHandler = uploadAttachmentHandler;
     this.cancelApplicationHandler = cancelApplicationHandler;
     this.pdfService = pdfService;
+    this.readRepository = readRepository;
+    this.verifyLicenseQuery = verifyLicenseQuery;
   }
 
   async createApplication(req, res) {
@@ -67,7 +71,7 @@ class ApplicationController {
     if (req.params.applicantId && req.user.userId !== req.params.applicantId) {
       return res.status(403).json(Result.failure('Forbidden', 403));
     }
-    const apps = await this.repository.findByApplicantId(targetId);
+    const apps = await this.readRepository.getApplicationsByApplicantId(targetId);
     res.json({ success: true, data: apps, timestamp: new Date() });
   }
 
@@ -121,34 +125,14 @@ class ApplicationController {
 
   async verifyLicensePublic(req, res) {
     try {
-      const result = await this.getApplicationByIdQuery.execute(req.params.id);
+      const result = await this.verifyLicenseQuery.execute(req.params.id);
       if (!result.success) {
-        return res.status(404).json({ success: false, error: 'License not found' });
-      }
-
-      const application = result.data;
-      
-      let ownerInitials = 'N/A';
-      try {
-        const user = await clerkClient.users.getUser(application.applicantId);
-        if (user) {
-          const first = user.firstName ? user.firstName[0].toUpperCase() + '.' : '';
-          const last = user.lastName ? user.lastName[0].toUpperCase() + '.' : '';
-          ownerInitials = `${first}${last}`.trim() || 'User';
-        }
-      } catch (err) {
-        console.error('Failed to fetch user initials for verification:', err.message);
+        return res.status(404).json({ success: false, error: result.message });
       }
 
       res.json({
         success: true,
-        data: {
-          id: application.id,
-          status: application.status,
-          licenseType: application.licenseType,
-          issueDate: application.createdAt, // Approximating issue date
-          ownerInitials
-        }
+        data: result.data
       });
     } catch (err) {
       console.error('Error in verifyLicensePublic:', err);

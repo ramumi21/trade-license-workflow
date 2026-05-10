@@ -1,11 +1,11 @@
 /**
- * XJ3395 — Application Layer
- * What this file handles: Generating application numbers.
+ * XJ3395 — Infrastructure Layer
+ * What this file handles: Generates sequences for application numbers using DB.
  */
-const pool = require('../../infrastructure/persistence/db');
+const pool = require('./db');
 
-class ApplicationNumberGenerator {
-  async generate() {
+class SequenceGenerator {
+  async next() {
     const year = new Date().getFullYear();
     const client = await pool.connect();
     try {
@@ -18,7 +18,7 @@ class ApplicationNumberGenerator {
       
       await client.query('COMMIT');
       const sequence = res.rows[0].last_sequence;
-      return `TL-${year}-${String(sequence).padStart(5, '0')}`;
+      return { year, sequence };
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
@@ -28,4 +28,4 @@ class ApplicationNumberGenerator {
   }
 }
 
-module.exports = { ApplicationNumberGenerator };
+module.exports = { SequenceGenerator };

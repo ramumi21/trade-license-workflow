@@ -1,0 +1,275 @@
+
+
+
+
+
+System Purpose
+The XJ3395 Trade License Workflow System is an enterprise-grade web application that digitizes the end-to-end lifecycle of trade license applications. It replaces a historically manual, paper-based bureaucratic process with a secure digital portal — giving citizens a transparent way to apply and track licenses, and government officials a structured dashboard to review, verify, and authorize issuance.
+
+System Roles
+
+The Business Workflow — End to End
+Understanding the full human workflow is essential before reading any code. Here is the complete lifecycle of a single trade license application:
+
+An Applicant logs into the public portal (authenticated via Clerk). They fill in their application details including license type and commodity information.
+The Applicant settles the required application fee and uploads supporting documents (e.g., national ID, business registration certificate). These files are stored securely in Supabase cloud storage.
+The Applicant clicks Submit. The system validates that payment is settled and at least one document is attached before transitioning the status from PENDING to SUBMITTED.
+A Reviewer logs into their dashboard and sees the application in the Reviewer Waiting List. They inspect each uploaded document.
+If a document is unacceptable, the Reviewer selects Adjust and leaves a comment — the application returns to ADJUSTED and the Applicant is notified to re-upload. If all documents are in order, the Reviewer selects Accept.
+The application transitions to UNDER_REVIEW and appears in the Approver Waiting List.
+The Approver reviews the full application history including all Reviewer comments. Upon clicking Approve, three things happen automatically: (a) status changes to APPROVED, (b) an official PDF certificate with a unique QR code is generated, and (c) an automated approval email is sent to the Applicant.
+The Applicant receives the email, logs in, and downloads their official trade license PDF from the portal. Anyone can scan the QR code on the license to verify its authenticity via the public /verify/:id endpoint.
+
+Technology Stack
+
+How to Run Locally
+
+Clone the repository:
+git clone <repo-url> && cd trade-license-workflow
+Start the PostgreSQL database container:
+docker-compose up -d
+Install backend dependencies:
+npm install
+Run database migrations to create all tables:
+npm run migrate:up
+Create your .env file from the example and fill in values:
+cp .env.example .env
+Start the backend development server (runs on http://localhost:3000):
+npm run dev
+In a new terminal, install and start the frontend:
+cd frontend && npm install && npm run dev
+The frontend will be available at http://localhost:5173. The Swagger API docs are at http://localhost:3000/api-docs.
+
+Environment Variables
+Backend (.env)
+
+Frontend (.env)
+
+
+
+Clean Architecture — What It Means Here
+Clean Architecture is not an abstract concept in this project — it is enforced by a strict folder structure and a single inviolable rule: the Dependency Rule. Source code dependencies may only point inward, toward the Domain layer. The Domain knows nothing about PostgreSQL, Express, or Supabase. The Application layer knows the Domain. The Infrastructure layer implements Application interfaces. The Interfaces layer calls Application handlers.
+
+
+The Four Layers
+
+The Dependency Rule — Concrete Example
+The ApproveApplicationHandler (Application layer) needs to send an email. Here is how the Dependency Rule is respected:
+
+IEmailService is defined in src/application/interfaces/i_email_service.js — this is a pure JavaScript contract with no implementation.
+ApproveApplicationHandler imports IEmailService (the interface) — NOT EmailService (the Nodemailer implementation).
+EmailService in src/infrastructure/email/email_service.js implements IEmailService using Nodemailer.
+src/index.js wires them: new ApproveApplicationHandler(repo, new EmailService()). The handler never knows Nodemailer exists.
+Consequence: you can swap Nodemailer for AWS SES by writing a new class and changing one line in index.js. Zero domain or application code changes.
+
+Why No ORM?
+This project deliberately avoids ORMs like Prisma or TypeORM. ORMs typically use the Active Record pattern, which tightly couples domain entities to database schema — your entity becomes a 'smart database row' rather than a pure business object.
+
+Instead, TradeLicenseRepositoryImpl manually maps database rows to Domain Entities in the _buildDomainModel(row) method. This means TradeLicenseApplication is a pure JavaScript class with encapsulated business behaviors — it has no idea it is ever persisted to PostgreSQL.
+
+
+Dependency Injection — How index.js Wires Everything
+In src/index.js, every class is instantiated manually and passed into the constructors of the classes that need them. This is Pure DI — no framework magic, no decorators.
+
+const db = new Pool({ connectionString: process.env.DATABASE_URL });
+const repo          = new TradeLicenseRepositoryImpl(db);
+const emailService  = new EmailService();
+const storageService = new SupabaseStorageService();
+const approveHandler = new ApproveApplicationHandler(repo, emailService);
+const approvalController = new ApprovalController(approveHandler);
+
+Every dependency relationship is visible in a single file. There is no annotation scanning, no IoC container magic. When something breaks, you trace it here first.
+
+
+
+Overview
+The Domain layer is the heart of the application. It has zero npm dependencies (except uuid for ID generation) and knows nothing about HTTP, databases, or external APIs. If you delete every other layer, the Domain layer should still compile and make sense as a standalone business model.
+
+TradeLicenseApplication — The Aggregate Root
+File: src/domain/model/trade_license_application.js
+This is the most important class in the entire codebase. It is the Aggregate Root — the single point of entry for all state changes to an application and its related objects. No code outside this class is permitted to directly modify an application's status, attachments, or comments.
+
+Properties
+
+Methods and Business Rules
+submit() — Validates: status must be PENDING or ADJUSTED; payment.isSettled must be true; at least one attachment must exist. On success: transitions status to SUBMITTED, registers ApplicationSubmittedEvent. Throws: PaymentNotSettledException, InvalidWorkflowTransitionException.
+review(action, commentMessage, reviewerId) — Validates: status must be SUBMITTED. Applies action: ACCEPT → UNDER_REVIEW; REJECT → REJECTED; ADJUST → ADJUSTED. Appends a new WorkflowComment. Throws: InvalidWorkflowTransitionException.
+approve(action, commentMessage, approverId) — Validates: status must be UNDER_REVIEW. Applies action: APPROVE → APPROVED (raises ApplicationApprovedEvent); REJECT → REJECTED; REREVIEW → RE_REVIEW. Throws: InvalidWorkflowTransitionException.
+registerEvent(event) — Internal helper: pushes a DomainEvent to the domainEvents array without publishing it. Events are published by the handler after a successful save.
+
+Payment — Value Object
+File: src/domain/model/payment.js
+Payment has no identity (no ID field). Two Payment instances with the same transactionId, amount, and currency are conceptually identical. Its key property is isSettled (boolean) which gates the ability to submit an application. It is stored as flat columns on the trade_license_applications table (payment_amount, payment_currency, payment_is_settled, etc.) and reconstructed by the repository's _buildDomainModel method.
+
+Attachment & WorkflowComment — Child Entities
+Both are child Entities of the TradeLicenseApplication aggregate. They have their own UUIDs but have no meaning outside the aggregate. They are accessed and mutated exclusively through methods on TradeLicenseApplication — code elsewhere never directly creates or modifies them. The repository saves them atomically as part of saving the aggregate.
+
+Workflow Status — State Machine
+
+
+
+Domain Repository Interface
+File: src/domain/repository/trade_license_application_repository.js
+This is a pure interface — it contains method signatures only, no SQL, no imports, just JSDoc documentation. It defines the contract that any persistence implementation must fulfill:
+
+findById(id) — Returns a fully-hydrated TradeLicenseApplication or null.
+findByApplicantId(id) — Returns all applications for a given Clerk user ID.
+findForReviewerQueue() — Returns all SUBMITTED and ADJUSTED applications.
+findForApproverQueue() — Returns all UNDER_REVIEW and RE_REVIEW applications.
+save(application) — Inserts a new application plus all child entities.
+update(application) — Upserts the application and persists any new child entities added since the last save.
+
+
+
+Overview
+The Application layer coordinates use cases. A Handler represents exactly one thing the system can do. It receives a command (a plain data object), fetches the relevant domain entity, calls a method on it, and saves it back. It does not contain business rules — those live in the Domain. It does not contain SQL — those live in Infrastructure. It is the orchestrator.
+
+Handlers
+submit_application_handler.js
+
+approve_application_handler.js
+
+upload_attachment_handler.js
+
+The Result Pattern
+Every handler returns a Result object, not raw data or thrown errors. Controllers check Result.isSuccess before sending the HTTP response. This makes error handling explicit and prevents uncaught promise rejections from reaching the error middleware for expected failures.
+
+// In handler:
+return Result.success({ applicationId: app.id });
+return Result.fail('Application not found', 404);
+
+// In controller:
+const result = await handler.execute(command);
+if (!result.isSuccess) return res.status(result.statusCode).json({ error: result.error });
+return res.status(200).json(result.value);
+
+Application Interfaces
+These are the contracts that Infrastructure must fulfill. The Application layer imports these interfaces — never the concrete implementations.
+
+IStorageService (i_storage_service.js): uploadFile(fileBuffer, originalFilename, mimeType) → Promise<string> (returns public URL)
+IEmailService (i_email_service.js): sendApprovalEmail(to, applicantName, applicationId) → Promise<void>
+
+Mappers
+application_mapper.js
+Converts raw Domain Entities into safe, flat DTO objects before they reach the HTTP response. This prevents leaking internal domain properties (like domainEvents) to API consumers and allows the API response shape to evolve independently of the domain model.
+toApplicationDetailDto — Full detail for single-application views (includes comments, attachments array with URLs)
+toApplicationSummaryDto — Lightweight summary for list/queue views (omits comment history and attachment details)
+
+
+
+Persistence
+db.js
+Initializes and exports a single pg.Pool instance configured from DATABASE_URL. Includes an on('error') listener that logs idle client errors without crashing the server. The pool is passed as a constructor argument to all repository implementations — it is never imported directly by repositories (inversion of control).
+
+trade_license_repository_impl.js
+The most complex file in the infrastructure layer. It implements the IApplicationRepository interface with raw SQL queries wrapped in pg transactions.
+
+update(application) — Wraps everything in BEGIN/COMMIT. First UPSERTs the main applications row. Then iterates application.attachments and INSERTs any Attachment that has no id yet (new ones). Does the same for workflow_comments. If any step throws, the transaction is rolled back via ROLLBACK in the catch block.
+findById(id) — JOINs trade_license_applications with attachments and workflow_comments. Returns one row per attachment/comment combination. The _buildDomainModel method de-duplicates these rows by grouping attachments and comments back into arrays.
+_buildDomainModel(rows) — The hydration method. Takes raw database rows and constructs a fully populated TradeLicenseApplication instance with nested Attachment and WorkflowComment objects. This is where column names (snake_case) are mapped to domain property names (camelCase).
+findForReviewerQueue() and findForApproverQueue() — Filtered queries that return only applications in relevant statuses. Used to populate the respective admin dashboards.
+
+
+analytics_repository.js
+Contains GROUP BY SQL queries that power the admin dashboard charts. Crucially, it does NOT instantiate domain entities — it returns raw aggregated data directly. This is the CQRS (Command Query Responsibility Segregation) pattern in action: reads for display purposes bypass the full domain model for performance.
+
+Storage Service
+src/infrastructure/storage/supabase_storage_service.js
+Implements IStorageService using the @supabase/supabase-js SDK. The uploadFile method generates a unique file key in the format Date.now()-uuid-originalFilename to guarantee no collisions. It calls supabase.storage.from(bucketName).upload(key, buffer, { contentType: mimeType }), then retrieves and returns the public URL via getPublicUrl(key). The returned URL is what gets stored in the attachments.file_path database column.
+
+Email Service
+src/infrastructure/email/email_service.js
+Implements IEmailService using Nodemailer. Creates a transporter from SMTP credentials on initialization. The sendApprovalEmail method formats an HTML email body containing the applicant's name, application number, and a link to log in and download their license. Errors are caught and logged — they do not throw, ensuring email failure never rolls back an approval.
+
+PDF Generation Service
+src/infrastructure/services/pdf_generation_service.js
+Uses pdfkit to draw an official-looking certificate layout. Generates a QR code data URL via the qrcode package that encodes the public /verify/:id URL. This QR code is embedded in the PDF so anyone can scan it and independently verify the license's authenticity. The PDF is streamed directly to the HTTP response — it is never written to disk.
+
+Database Migrations
+src/infrastructure/persistence/migrations/
+Managed by node-pg-migrate. Each migration file exports an up and down function. Running npm run migrate:up applies all pending migrations in order.
+
+
+
+
+Controllers
+application_controller.js
+POST /api/v1/applications — createApplication: validates licenseType via Joi, constructs SubmitApplicationCommand, calls submitHandler.execute().
+POST /api/v1/applications/:id/submit — submitApplication: fetches existing draft, calls submit handler with existing ID.
+POST /api/v1/applications/:id/attachments — uploadAttachment: runs multer middleware first; verifies req.file exists; passes temp file path and metadata to UploadAttachmentHandler.
+GET /api/v1/applications/:id/download-license — downloadLicense: Zero Trust security check (req.user.userId must equal application.applicantId — not just role, but ownership). Streams the generated PDF directly to the response.
+GET /api/v1/verify/:id — verifyLicensePublic: Public endpoint (no auth). Calls clerkClient.users.getUser() to safely resolve the applicant's initials for display without exposing full PII.
+
+approval_controller.js
+PUT /api/v1/approval/:id/action — approveAction: validates action via Joi. If action is APPROVE, calls clerkClient.users.getUser(applicantId) to fetch the real email address and passes it in the command payload. Calls ApproveApplicationHandler.execute().
+
+Middleware
+
+Full Route Table
+
+
+
+Trace 1: Applicant Uploads an Attachment
+This trace follows a file upload from the HTTP request to the Supabase bucket and back.
+
+
+Trace 2: Approver Approves an Application
+This trace shows the approval flow including email dispatch.
+
+
+Trace 3: Error Case — Approving a Non-Reviewable Application
+What happens when an Approver tries to approve an application that is still in PENDING status:
+
+Request hits PUT /api/v1/approval/:id/action with action: APPROVE.
+approve_application_handler.js calls repository.findById(id) — application is loaded with status PENDING.
+app.approve() is called. Inside TradeLicenseApplication.approve(), the method checks: if (this.status !== WorkflowStatus.UNDER_REVIEW). It is PENDING, so the check fails.
+The method throws new InvalidWorkflowTransitionException('Cannot approve an application that is not UNDER_REVIEW').
+The exception is not caught in the handler or controller — it bubbles up.
+Express catches it in error_middleware.js. The middleware checks instanceof InvalidWorkflowTransitionException and maps it to HTTP 422 Unprocessable Entity.
+The client receives: { error: 'Cannot approve an application that is not UNDER_REVIEW', statusCode: 422 }.
+
+
+
+
+DDD Building Blocks — Identified
+
+The Aggregate Boundary
+The Aggregate boundary is one of the most important design decisions in this project. TradeLicenseApplication, Attachment, and WorkflowComment form a single aggregate. This means:
+You never query attachments or comments directly from outside the aggregate — you always load the full TradeLicenseApplication and access them via app.attachments or app.comments.
+You never save an attachment in isolation — it is always saved as part of the aggregate transaction in repository.update(app).
+This guarantees that an attachment always has a valid parent application, and a comment always has the correct role and reviewer ID.
+
+
+
+How to Add a New Database Column
+Create a migration file: npm run migrate:create -- add_column_to_applications
+In the migration, write: ALTER TABLE trade_license_applications ADD COLUMN new_field VARCHAR;
+Add the property to TradeLicenseApplication constructor in src/domain/model/trade_license_application.js
+Update _buildDomainModel() in TradeLicenseRepositoryImpl to map the new column: newField: row.new_field
+Update the INSERT and UPDATE SQL queries in the repository to include the new column.
+Update toApplicationDetailDto in application_mapper.js to include the field in API responses.
+Run npm run migrate:up to apply the migration.
+
+How to Add a New Use Case
+Create a new command file in src/application/commands/ (plain data object, no logic).
+Create a new handler in src/application/handlers/ with a constructor that injects needed dependencies and an execute(command) method.
+Create the controller method in the appropriate controller in src/interfaces/rest/. Validate input with Joi. Call the handler. Return Result.
+Add the route in src/interfaces/routes/ with appropriate auth and role middleware.
+Wire the handler and inject into the controller in src/index.js.
+
+Common Mistakes to Avoid
+
+End-to-End Debugging Guide
+When a request fails, follow this triage order:
+
+Check the browser Network tab for the HTTP status code and response body.
+HTTP 401 — JWT is missing or expired. Check Clerk token expiry or middleware bypass config.
+HTTP 403 — Role mismatch. Check the user's publicMetadata.role in the Clerk dashboard.
+HTTP 422 — Business rule violation in the Domain layer. Read the error message — it will name the exact invalid transition. Fix the workflow state, not the code.
+HTTP 500 — Check the server terminal for the stack trace. Most 500s are database mapping errors in _buildDomainModel or missing environment variables.
+File upload failures — Check the uploads/ directory for leftover temp files and verify SUPABASE_SERVICE_ROLE_KEY is correctly set.
+Email not received — Check SMTP credentials. Verify the email was fire-and-forget (check server logs for the email service error log, not the API response).
+
+
+End of Document
+XJ3395 Trade License Workflow System — Technical Reference Manual v1.0

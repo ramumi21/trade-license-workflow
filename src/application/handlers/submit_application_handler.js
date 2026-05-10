@@ -8,9 +8,10 @@ const { TradeLicenseApplication } = require('../../domain/model/trade_license_ap
 const { v4: uuidv4 } = require('uuid');
 
 class SubmitApplicationHandler {
-  constructor(repository, applicationNumberGenerator, domainEventPublisher) {
+  constructor(repository, sequenceGenerator, applicationNumberService, domainEventPublisher) {
     this.repository = repository;
-    this.applicationNumberGenerator = applicationNumberGenerator;
+    this.sequenceGenerator = sequenceGenerator;
+    this.applicationNumberService = applicationNumberService;
     this.domainEventPublisher = domainEventPublisher;
   }
 
@@ -22,7 +23,8 @@ class SubmitApplicationHandler {
       application.submit();
       await this.repository.save(application);
     } else {
-      const applicationNumber = await this.applicationNumberGenerator.generate();
+      const { year, sequence } = await this.sequenceGenerator.next();
+      const applicationNumber = this.applicationNumberService.generateNumber(year, sequence);
       application = new TradeLicenseApplication({
         id: uuidv4(),
         applicationNumber,

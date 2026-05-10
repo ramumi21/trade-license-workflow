@@ -4,9 +4,10 @@ const { TradeLicenseApplication } = require('../../domain/model/trade_license_ap
 describe('SubmitApplicationHandler', () => {
   it('should save a new application if no id is provided', async () => {
     const repo = { save: jest.fn() };
-    const generator = { generate: jest.fn().mockResolvedValue('TL-123') };
+    const sequenceGenerator = { next: jest.fn().mockResolvedValue({ year: 2024, sequence: 123 }) };
+    const applicationNumberService = { generateNumber: jest.fn().mockReturnValue('TL-2024-00123') };
     const publisher = { publish: jest.fn() };
-    const handler = new SubmitApplicationHandler(repo, generator, publisher);
+    const handler = new SubmitApplicationHandler(repo, sequenceGenerator, applicationNumberService, publisher);
 
     await handler.handle({ licenseType: 'TRADE_LICENSE', applicantId: '123' });
     
@@ -17,7 +18,7 @@ describe('SubmitApplicationHandler', () => {
     const app = new TradeLicenseApplication({ status: 'PENDING' });
     app.submit = jest.fn();
     const repo = { findById: jest.fn().mockResolvedValue(app), save: jest.fn() };
-    const handler = new SubmitApplicationHandler(repo, {}, { publish: jest.fn() });
+    const handler = new SubmitApplicationHandler(repo, {}, {}, { publish: jest.fn() });
 
     await handler.handle({ applicationId: '123' });
     
